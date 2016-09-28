@@ -1,0 +1,19 @@
+/*Stylesheet for Minesweeep
+Max Ferguson*/
+
+.ctrlpanel-buttons {
+	-fx-background-color: #333333;
+	-fx-font-size: 16px;
+	-fx-text-fill: white;
+}
+
+.bottom-buttons-unclicked {
+	-fx-background-color: #f2f2f2;
+	-fx-font-size: 20px;
+}
+
+.bottom-buttons-clicked {
+	-fx-background-color: #8c8c8c;
+	-fx-font-size: 20px;
+	-fx-font-color: #1a1a1a;
+}
