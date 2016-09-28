@@ -16,7 +16,7 @@ import java.util.*;
 
 /**
  * MinesweepGUI.java
- * Created by Maxzolythus Feguson on 7/8/2016.
+ * Created by Maxzolythus Ferguson on 7/8/2016.
  */
 public class MinesweepGUI extends Application implements Observer {
 
@@ -62,7 +62,8 @@ public class MinesweepGUI extends Application implements Observer {
 
         VBox menu = new VBox();
         menu.setSpacing(10);
-
+        
+        // Easy Mode button
         Button easy = new Button("Easy: size 9x9");
         easy.getStyleClass().add("ctrlpanel-buttons");
         easy.addEventHandler(MouseEvent.MOUSE_CLICKED,
@@ -75,7 +76,8 @@ public class MinesweepGUI extends Application implements Observer {
                     main.setCenter(makeGameBoard());
                     isTimerStarted = false;
                 });
-
+        
+        // Normal Mode button
         Button med = new Button("Med: size 16x16");
         med.getStyleClass().add("ctrlpanel-buttons");
         med.addEventHandler(MouseEvent.MOUSE_CLICKED,
@@ -88,6 +90,8 @@ public class MinesweepGUI extends Application implements Observer {
                     main.setCenter(makeGameBoard());
                     isTimerStarted = false;
                 });
+        
+        // Hard Mode button
         Button hard = new Button("Hard: size 24x24");
         hard.getStyleClass().add("ctrlpanel-buttons");
         hard.addEventHandler(MouseEvent.MOUSE_CLICKED,
@@ -123,7 +127,8 @@ public class MinesweepGUI extends Application implements Observer {
         Button flag = new Button("Flag");
         flag.getStyleClass().add("bottom-buttons-unclicked");
         //flag.getStyleClass().add("bottom-buttons-clicked");
-
+        
+        // Flagging button
         flag.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 event -> {
                     if(model.getSweeping()){
@@ -132,6 +137,8 @@ public class MinesweepGUI extends Application implements Observer {
                         sweep.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
                     }
                 });
+        
+        // Sweeping button
         sweep.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 event -> {
                     if(!model.getSweeping()){
