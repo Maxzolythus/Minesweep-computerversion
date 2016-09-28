@@ -58,10 +58,11 @@ public class MinesweepModel extends Observable {
         else{
             maxMines = 100;
         }
-
-        gameBoard = new Character[size][size];
-        blockBoard = new Character[size][size];
-        flags = new Character[size][size];
+        
+        // Initializing Board data
+        gameBoard = new Character[size][size]; // Contains mines, numbers, and empty spaces
+        blockBoard = new Character[size][size]; // Contains the spaces you've swept
+        flags = new Character[size][size]; // Contains the flags you've placed
 
         for(int r = 0;
             r < size;
