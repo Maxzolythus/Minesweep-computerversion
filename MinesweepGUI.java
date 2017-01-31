@@ -16,7 +16,7 @@ import java.util.*;
 
 /**
  * MinesweepGUI.java
- * Created by Maxzolythus Ferguson on 7/8/2016.
+ * Created by Maxzolythus Feguson on 7/8/2016.
  */
 public class MinesweepGUI extends Application implements Observer {
 
@@ -46,70 +46,8 @@ public class MinesweepGUI extends Application implements Observer {
         scene.getStylesheets().add("/MinesweepStyles.css");
 
         // Top of the bp
-        ctrlPanel = new HBox(200);
-        VBox txtBox = new VBox();
-
-        BorderPane.setMargin(ctrlPanel, new Insets(10, 5, 0, 0));
-        time = new Text("0:00");
-        time.setFont(new Font("Arial", 60));
-        time.setFill(Color.WHITE);
-
-        remainingMines = new Text("There are " + model.getRemainingMines() + " mines left.");
-        remainingMines.setFont(new Font("Arial", 14));
-        remainingMines.setFill(Color.WHITE);
-
-        txtBox.getChildren().addAll(time, remainingMines);
-
-        VBox menu = new VBox();
-        menu.setSpacing(10);
         
-        // Easy Mode button
-        Button easy = new Button("Easy: size 9x9");
-        easy.getStyleClass().add("ctrlpanel-buttons");
-        easy.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                event -> {
-                    size = 9;
-                    ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
-                    main.setCenter(makeGameBoard());
-                    isTimerStarted = false;
-                });
-        
-        // Normal Mode button
-        Button med = new Button("Med: size 16x16");
-        med.getStyleClass().add("ctrlpanel-buttons");
-        med.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                event -> {
-                    size = 16;
-                    ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
-                    main.setCenter(makeGameBoard());
-                    isTimerStarted = false;
-                });
-        
-        // Hard Mode button
-        Button hard = new Button("Hard: size 24x24");
-        hard.getStyleClass().add("ctrlpanel-buttons");
-        hard.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                event -> {
-                    size = 24;
-                    ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
-                    main.setCenter(makeGameBoard());
-                    isTimerStarted = false;
-                });
-
-        menu.getChildren().addAll(easy,med,hard);
-
-        ctrlPanel.getChildren().addAll(txtBox, menu);
-
-        main.setTop(ctrlPanel);
+        main.setTop(makeControlPanel());
 
         // Center of the bp
 
@@ -117,40 +55,7 @@ public class MinesweepGUI extends Application implements Observer {
 
         // Bottom of the bp
 
-        HBox botBox = new HBox();
-        botBox.setSpacing(50);
-        botBox.setAlignment(Pos.CENTER);
-        Button sweep = new Button("Sweep");
-        //sweep.getStyleClass().add("bottom-buttons-unclicked");
-        sweep.getStyleClass().add("bottom-buttons-clicked");
-
-        Button flag = new Button("Flag");
-        flag.getStyleClass().add("bottom-buttons-unclicked");
-        //flag.getStyleClass().add("bottom-buttons-clicked");
-        
-        // Flagging button
-        flag.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                event -> {
-                    if(model.getSweeping()){
-                        model.toggleSweeping();
-                        flag.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
-                        sweep.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
-                    }
-                });
-        
-        // Sweeping button
-        sweep.addEventHandler(MouseEvent.MOUSE_CLICKED,
-                event -> {
-                    if(!model.getSweeping()){
-                        model.toggleSweeping();
-                        flag.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
-                        sweep.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
-                    }
-                });
-
-        botBox.getChildren().addAll(sweep, flag);
-
-        main.setBottom(botBox);
+        main.setBottom(makeFGPanel());
 
         stage.setTitle( "Minesweeper" );
         stage.setScene(scene);
@@ -183,7 +88,7 @@ public class MinesweepGUI extends Application implements Observer {
                  i < size;
                  ++i) {
 
-                if(size == 9){
+                if(size == 9){ // Determines size of buttons on the game board, based on size of board
                     recSize = 50;
                     arcSize = 20;
                     textSize = 25;
@@ -233,6 +138,111 @@ public class MinesweepGUI extends Application implements Observer {
 
         return grid;
     }
+	
+	/**
+	* Creates the flag/sweep control panel
+	* @return A HBox that controls if your flagging or sweeping when you click
+	*/
+	private HBox makeFGPanel(){
+		HBox botBox = new HBox();
+		botBox.setSpacing(50);
+		botBox.setAlignment(Pos.CENTER);
+		Button sweep = new Button("Sweep");
+		//sweep.getStyleClass().add("bottom-buttons-unclicked");
+		sweep.getStyleClass().add("bottom-buttons-clicked");
+
+		Button flag = new Button("Flag");
+		flag.getStyleClass().add("bottom-buttons-unclicked");
+		//flag.getStyleClass().add("bottom-buttons-clicked");
+
+		flag.addEventHandler(MouseEvent.MOUSE_CLICKED,
+				event -> {
+					if(model.getSweeping()){
+						model.toggleSweeping();
+						flag.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
+						sweep.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
+					}
+				});
+		sweep.addEventHandler(MouseEvent.MOUSE_CLICKED,
+				event -> {
+					if(!model.getSweeping()){
+						model.toggleSweeping();
+						flag.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
+						sweep.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
+					}
+				});
+
+		botBox.getChildren().addAll(sweep, flag);
+		
+		return botBox;
+	}
+	
+	/**
+	* Creates the main control panel, that controls diffuculty, and displays certain other aspects of the game
+	* @return A HBox that contains the control panel's information  
+	*/
+	private HBox makeControlPanel(){
+		ctrlPanel = new HBox(200);
+        VBox txtBox = new VBox();
+
+        BorderPane.setMargin(ctrlPanel, new Insets(10, 5, 0, 0));
+        time = new Text("0:00");
+        time.setFont(new Font("Arial", 60));
+        time.setFill(Color.WHITE);
+
+        remainingMines = new Text("There are " + model.getRemainingMines() + " mines left.");
+        remainingMines.setFont(new Font("Arial", 14));
+        remainingMines.setFill(Color.WHITE);
+
+        txtBox.getChildren().addAll(time, remainingMines);
+
+        VBox menu = new VBox();
+        menu.setSpacing(10);
+
+        Button easy = new Button("Easy: size 9x9");
+        easy.getStyleClass().add("ctrlpanel-buttons");
+        easy.addEventHandler(MouseEvent.MOUSE_CLICKED,
+                event -> {
+                    size = 9;
+                    ctrlPanel.setSpacing(200);
+                    model = new MinesweepModel(size);
+                    model.addObserver(this);
+                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    main.setCenter(makeGameBoard());
+                    isTimerStarted = false;
+                });
+
+        Button med = new Button("Med: size 16x16");
+        med.getStyleClass().add("ctrlpanel-buttons");
+        med.addEventHandler(MouseEvent.MOUSE_CLICKED,
+                event -> {
+                    size = 16;
+                    ctrlPanel.setSpacing(200);
+                    model = new MinesweepModel(size);
+                    model.addObserver(this);
+                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    main.setCenter(makeGameBoard());
+                    isTimerStarted = false;
+                });
+        Button hard = new Button("Hard: size 24x24");
+        hard.getStyleClass().add("ctrlpanel-buttons");
+        hard.addEventHandler(MouseEvent.MOUSE_CLICKED,
+                event -> {
+                    size = 24;
+                    ctrlPanel.setSpacing(200);
+                    model = new MinesweepModel(size);
+                    model.addObserver(this);
+                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    main.setCenter(makeGameBoard());
+                    isTimerStarted = false;
+                });
+
+        menu.getChildren().addAll(easy,med,hard);
+
+        ctrlPanel.getChildren().addAll(txtBox, menu);
+		
+		return ctrlPanel;
+	}
 
     /**
      * Starts the timer
