@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,9 +15,11 @@ import javafx.stage.Stage;
 
 import java.util.*;
 
+import static javafx.application.Platform.exit;
+
 /**
  * MinesweepGUI.java
- * Created by Maxzolythus Feguson on 7/8/2016.
+ * Created by Maxzolythus Ferguson on 7/8/2016.
  */
 public class MinesweepGUI extends Application implements Observer {
 
@@ -27,19 +30,22 @@ public class MinesweepGUI extends Application implements Observer {
     private boolean isTimerStarted = false;
 
     private int size = 9;
-    private MinesweepModel model;
+    //private MinesweepModel model;
+    private MinesweepController controller;
 
     private Text time;
     private Text remainingMines;
     private HBox ctrlPanel;
+    private BorderPane main;
 
     public MinesweepGUI(){
-        model = new MinesweepModel(size);
-        model.addObserver(this);
+        controller = new MinesweepController(size);
+        controller.addObserver(this);
     }
 
     public void start(Stage stage){
-        BorderPane main = new BorderPane();
+        stage.onCloseRequestProperty().setValue(event -> {Platform.exit(); System.exit(0);});
+        main = new BorderPane();
         main.setPrefSize(500, 750);
         main.setStyle("-fx-background-color: #1a1a1a");
         Scene scene = new Scene(main);
@@ -104,7 +110,7 @@ public class MinesweepGUI extends Application implements Observer {
                 bot.setArcHeight(arcSize);
                 bot.setArcWidth(arcSize);
 
-                Text num = new Text(model.getSpace(r, i).toString());
+                Text num = new Text(controller.getSpace(r, i).toString());
                 num.setFont(new Font(textSize));
                 num.setFill(Color.WHITE);
                 gameTxt.add(num);
@@ -119,7 +125,7 @@ public class MinesweepGUI extends Application implements Observer {
 
                 btn.addEventHandler(MouseEvent.MOUSE_CLICKED,
                         event -> {
-                            model.guess(row, col);
+                            controller.guess(row, col);
                             if(!isTimerStarted) {
                                 beginTimer();
                                 isTimerStarted = true;
@@ -157,16 +163,16 @@ public class MinesweepGUI extends Application implements Observer {
 
 		flag.addEventHandler(MouseEvent.MOUSE_CLICKED,
 				event -> {
-					if(model.getSweeping()){
-						model.toggleSweeping();
+					if(controller.getSweeping()){
+						controller.toggleSweeping();
 						flag.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
 						sweep.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
 					}
 				});
 		sweep.addEventHandler(MouseEvent.MOUSE_CLICKED,
 				event -> {
-					if(!model.getSweeping()){
-						model.toggleSweeping();
+					if(!controller.getSweeping()){
+						controller.toggleSweeping();
 						flag.setStyle("-fx-background-color: #8c8c8c; -fx-font-size: 20px; -fx-font-color: #1a1a1a;");
 						sweep.setStyle("-fx-background-color: #f2f2f2; -fx-font-size: 20px;");
 					}
@@ -178,7 +184,7 @@ public class MinesweepGUI extends Application implements Observer {
 	}
 	
 	/**
-	* Creates the main control panel, that controls diffuculty, and displays certain other aspects of the game
+	* Creates the main control panel, that controls difficulty, and displays certain other aspects of the game
 	* @return A HBox that contains the control panel's information  
 	*/
 	private HBox makeControlPanel(){
@@ -190,11 +196,15 @@ public class MinesweepGUI extends Application implements Observer {
         time.setFont(new Font("Arial", 60));
         time.setFill(Color.WHITE);
 
-        remainingMines = new Text("There are " + model.getRemainingMines() + " mines left.");
+        remainingMines = new Text("There are " + controller.getRemainingMines() + " mines left.");
         remainingMines.setFont(new Font("Arial", 14));
         remainingMines.setFill(Color.WHITE);
 
-        txtBox.getChildren().addAll(time, remainingMines);
+        Button quit = new Button("Quit");
+        quit.getStyleClass().add("ctrlpanel-buttons");
+        quit.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {Platform.exit(); System.exit(0);});
+
+        txtBox.getChildren().addAll(time, remainingMines, quit);
 
         VBox menu = new VBox();
         menu.setSpacing(10);
@@ -205,9 +215,9 @@ public class MinesweepGUI extends Application implements Observer {
                 event -> {
                     size = 9;
                     ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    controller = new MinesweepController(size);
+                    controller.addObserver(this);
+                    remainingMines.setText("There are " + controller.getRemainingMines() + " mines left.");
                     main.setCenter(makeGameBoard());
                     isTimerStarted = false;
                 });
@@ -218,9 +228,9 @@ public class MinesweepGUI extends Application implements Observer {
                 event -> {
                     size = 16;
                     ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    controller = new MinesweepController(size);
+                    controller.addObserver(this);
+                    remainingMines.setText("There are " + controller.getRemainingMines() + " mines left.");
                     main.setCenter(makeGameBoard());
                     isTimerStarted = false;
                 });
@@ -230,9 +240,9 @@ public class MinesweepGUI extends Application implements Observer {
                 event -> {
                     size = 24;
                     ctrlPanel.setSpacing(200);
-                    model = new MinesweepModel(size);
-                    model.addObserver(this);
-                    remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+                    controller = new MinesweepController(size);
+                    controller.addObserver(this);
+                    remainingMines.setText("There are " + controller.getRemainingMines() + " mines left.");
                     main.setCenter(makeGameBoard());
                     isTimerStarted = false;
                 });
@@ -248,21 +258,21 @@ public class MinesweepGUI extends Application implements Observer {
      * Starts the timer
      */
     public void beginTimer(){
-        model.start();
+        controller.start();
     }
 
 
     public void update(Observable t, Object o){
-        if(!model.isGameOver()) {
-            if (model.seconds < 10) {
-                time.setText(model.min + ":0" + model.seconds);
+        if(!controller.isGameOver()) {
+            if (controller.seconds < 10) {
+                time.setText(controller.min + ":0" + controller.seconds);
                 //System.out.println(model.min + ":0" + model.seconds); debug
             } else {
-                time.setText(model.min + ":" + model.seconds);
+                time.setText(controller.min + ":" + controller.seconds);
                 //System.out.println(model.min + ":" + model.seconds); debug
             }
 
-            Character[][] hidden = model.getHidden();
+            Character[][] hidden = controller.getHidden();
 
             // Updating the game board
             for (int r = 0;
@@ -271,7 +281,7 @@ public class MinesweepGUI extends Application implements Observer {
                 for (int c = 0;
                      c < size;
                      c++) {
-                    if(model.hasFlag(r,c)){
+                    if(controller.hasFlag(r,c)){
                         gameBtns.get((r * size) + c).setFill(Color.web("#ff1a1a"));
                     }
                     else{
@@ -289,10 +299,10 @@ public class MinesweepGUI extends Application implements Observer {
                 }
             }
 
-            remainingMines.setText("There are " + model.getRemainingMines() + " mines left.");
+            remainingMines.setText("There are " + controller.getRemainingMines() + " mines left.");
 
             // Checking for a win
-            if(model.hasWon()){
+            if(controller.hasWon()){
                 time.setText("You Win!");
                 ctrlPanel.setSpacing(80);
             }

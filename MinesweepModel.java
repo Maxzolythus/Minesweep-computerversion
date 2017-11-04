@@ -1,6 +1,7 @@
 import javafx.application.Platform;
 
 import java.awt.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -14,6 +15,7 @@ public class MinesweepModel extends Observable {
     public int size;
     private int maxMines;
     private int flagNum = 0;
+    private int turnNum = 0;
     private boolean gameOver = false;
     private boolean isSweeping = true;
 
@@ -22,8 +24,8 @@ public class MinesweepModel extends Observable {
     private final Character HIDDEN = '/';
     private final Character FLAG = '>';
 
-    public int seconds = 0;
-    public int min = 0;
+    protected int seconds = 0;
+    protected int min = 0;
     private Timer timer = new Timer();
     private TimerTask task = new TimerTask() {
         @Override
@@ -46,7 +48,6 @@ public class MinesweepModel extends Observable {
         }
     };
 
-
     public MinesweepModel(int size){
         this.size = size;
         if(size == 9){
@@ -58,11 +59,10 @@ public class MinesweepModel extends Observable {
         else{
             maxMines = 100;
         }
-        
-        // Initializing Board data
-        gameBoard = new Character[size][size]; // Contains mines, numbers, and empty spaces
-        blockBoard = new Character[size][size]; // Contains the spaces you've swept
-        flags = new Character[size][size]; // Contains the flags you've placed
+
+        gameBoard = new Character[size][size];
+        blockBoard = new Character[size][size];
+        flags = new Character[size][size];
 
         for(int r = 0;
             r < size;
@@ -87,20 +87,22 @@ public class MinesweepModel extends Observable {
         int numOfMines = 0;
 
         // First pass through the game board populates it with mines and blanks
-        for(int r = 0;
-                r < size;
-                r++){
-            for(int c = 0;
-                    c < size;
-                    c++){
-                int random = randInt(0, numOfMines + 1);
+        while(numOfMines < maxMines) {
+            for (int r = 0;
+                 r < size;
+                 r++) {
+                for (int c = 0;
+                     c < size;
+                     c++) {
+                    int random = randInt(0, 10);
 
-                if(random == 0 && numOfMines < maxMines){
-                    gameBoard[r][c] = MINE;
-                    numOfMines++;
-                }
-                else{
-                    gameBoard[r][c] = EMPTY;
+                    // Second check is necessary, as during one pass through the numOfMines can be > maxMines
+                    if (random <= 2 && numOfMines < maxMines) {
+                        gameBoard[r][c] = MINE;
+                        numOfMines++;
+                    } else {
+                        gameBoard[r][c] = EMPTY;
+                    }
                 }
             }
         }
@@ -259,19 +261,6 @@ public class MinesweepModel extends Observable {
 
             }
         }
-
-        /** Debug
-        String str = "";
-
-        for(Character [] cha : gameBoard){
-            for(Character c : cha){
-                str+= c;
-            }
-            str += "\n";
-        }
-
-        System.out.println(str); **/
-
     }
 
     /**
@@ -290,12 +279,18 @@ public class MinesweepModel extends Observable {
      */
     public void guess(int row, int col){
         if(!gameOver) {
+            turnNum++;
             if(isSweeping) {
                 if (gameBoard[row][col] == MINE) {
                     gameOver = true;
-                } else if (Character.isDigit(gameBoard[row][col])) {
+                } else if (Character.isDigit(gameBoard[row][col]) && turnNum != 1) {
                     blockBoard[row][col] = gameBoard[row][col];
-                } else {
+                }
+                else {
+                    if (Character.isDigit(gameBoard[row][col]) && turnNum == 1) {
+                        blockBoard[row][col] = gameBoard[row][col];
+                    }
+
                     ArrayList<Point> zone = getZone(row, col);
                     for (int r = 0;
                          r < size;
@@ -321,8 +316,6 @@ public class MinesweepModel extends Observable {
                 }
             }
         }
-        setChanged();
-        notifyObservers();
     }
 
     /**
@@ -335,224 +328,83 @@ public class MinesweepModel extends Observable {
         ArrayList<Point> pointList = new ArrayList<>();
 
         if (row == 0) {
-            if(gameBoard[row + 1][col] == EMPTY && flags[row + 1][col] == EMPTY
-                    && !pointList.contains(new Point(row + 1, col))){
-                // Look down
-                pointList.add(new Point(row + 1, col));
-            }
-            else if(Character.isDigit(gameBoard[row + 1][col]) && flags[row + 1][col] == EMPTY
-                    && !pointList.contains(new Point(row + 1, col))){
-                    if(hasEmptyNeighbour(row + 1, col)){
-                        pointList.add(new Point(row + 1, col));
-                    }
-            }
+            getNeighborsUtil(row + 1, col, pointList);
 
             if(col > 0){
-                if(gameBoard[row][col - 1] == EMPTY && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col - 1))){
-                    // Look left
-                    pointList.add(new Point(row, col - 1));
-                }
-                else if(Character.isDigit(gameBoard[row][col - 1]) && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col - 1))){
-                    if(hasEmptyNeighbour(row, col - 1)){
-                        pointList.add(new Point(row, col - 1));
-                    }
-                }
+                getNeighborsUtil(row, col - 1, pointList);
             }
-
 
             if(col + 1 < size){
-                if(gameBoard[row][col + 1] == EMPTY && flags[row][col + 1] == EMPTY
-                        && !pointList.contains(new Point(row, col + 1))){
-                    // Look right
-                    pointList.add(new Point(row, col + 1));
-                }
-                else if(Character.isDigit(gameBoard[row][col + 1]) && flags[row][col + 1] == EMPTY
-                        && !pointList.contains(new Point(row, col + 1))){
-                    if(hasEmptyNeighbour(row, col + 1)){
-                        pointList.add(new Point(row, col + 1));
-                    }
-                }
+                getNeighborsUtil(row, col + 1, pointList);
             }
         } else if (col == 0) {
-            if(gameBoard[row][col + 1] == EMPTY && flags[row][col + 1] == EMPTY
-                    && !pointList.contains(new Point(row, col + 1))){
-                // Look right
-                pointList.add(new Point(row, col + 1));
-            }
-            else if(Character.isDigit(gameBoard[row][col + 1]) && flags[row][col + 1] == EMPTY
-                    && !pointList.contains(new Point(row, col + 1))){
-                if(hasEmptyNeighbour(row, col + 1)){
-                    pointList.add(new Point(row, col + 1));
-                }
-            }
+            getNeighborsUtil(row, col + 1, pointList);
 
             if(row > 0){
-                if(gameBoard[row - 1][col] == EMPTY && flags[row - 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    // Look up
-                    pointList.add(new Point(row - 1, col));
-                }
-                else if(Character.isDigit(gameBoard[row - 1][col]) && flags[row - 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    if(hasEmptyNeighbour(row - 1, col)){
-                        pointList.add(new Point(row - 1, col));
-                    }
-                }
+                getNeighborsUtil(row - 1, col, pointList);
             }
 
             if(row + 1 < size){
-                if(gameBoard[row + 1][col] == EMPTY && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row + 1, col))){
-                    // Look down
-                    pointList.add(new Point(row + 1, col));
-                }
-                else if(Character.isDigit(gameBoard[row + 1][col]) && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row + 1, col))){
-                    if(hasEmptyNeighbour(row + 1, col)){
-                        pointList.add(new Point(row + 1, col));
-                    }
-                }
+                getNeighborsUtil(row + 1, col, pointList);
             }
         } else {
             if(row + 1 == size) {
-                if(gameBoard[row - 1][col] == EMPTY && flags[row - 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    // Look up
-                    pointList.add(new Point(row - 1, col));
-                }
-                else if(Character.isDigit(gameBoard[row - 1][col]) && flags[row - 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    if(hasEmptyNeighbour(row - 1, col)){
-                        pointList.add(new Point(row - 1, col));
-                    }
-                }
+                getNeighborsUtil(row - 1, col, pointList);
 
                 if(col + 1 < size) {
-                    if(gameBoard[row][col + 1] == EMPTY && flags[row][col + 1] == EMPTY
-                            && !pointList.contains(new Point(row, col + 1))){
-                        // Look right
-                        pointList.add(new Point(row, col + 1));
-                    }
-                    else if(Character.isDigit(gameBoard[row][col + 1]) && flags[row][col + 1] == EMPTY
-                            && !pointList.contains(new Point(row, col + 1))){
-                        if(hasEmptyNeighbour(row, col + 1)){
-                            pointList.add(new Point(row, col + 1));
-                        }
-                    }
+                    getNeighborsUtil(row, col + 1, pointList);
                 }
 
                 if(col > 0) {
-                    if(gameBoard[row][col - 1] == EMPTY && flags[row][col - 1] == EMPTY
-                            && !pointList.contains(new Point(row, col - 1))){
-                        // Look left
-                        pointList.add(new Point(row, col - 1));
-                    }
-                    else if(Character.isDigit(gameBoard[row][col - 1]) && flags[row][col - 1] == EMPTY
-                            && !pointList.contains(new Point(row, col - 1))){
-                        if(hasEmptyNeighbour(row, col - 1)){
-                            pointList.add(new Point(row, col - 1));
-                        }
-                    }
+                    getNeighborsUtil(row, col - 1, pointList);
                 }
 
             }
 
             if(col + 1 == size) {
                 if(row + 1 < size) {
-                    if (gameBoard[row + 1][col] == EMPTY && flags[row + 1][col] == EMPTY
-                            && !pointList.contains(new Point(row + 1, col))) {
-                        // Look down
-                        pointList.add(new Point(row + 1, col));
-                    }
-                    else if(Character.isDigit(gameBoard[row + 1][col]) && flags[row + 1][col] == EMPTY
-                            && !pointList.contains(new Point(row + 1, col))){
-                        if(hasEmptyNeighbour(row + 1, col)){
-                            pointList.add(new Point(row + 1, col));
-                        }
-                    }
+                    getNeighborsUtil(row + 1, col, pointList);
                 }
 
                 if(row > 0) {
-                    if (gameBoard[row - 1][col] == EMPTY && flags[row - 1][col] == EMPTY
-                            && !pointList.contains(new Point(row - 1, col))) {
-                        // Look up
-                        pointList.add(new Point(row - 1, col));
-                    }
-                    else if(Character.isDigit(gameBoard[row - 1][col]) && flags[row - 1][col] == EMPTY
-                            && !pointList.contains(new Point(row - 1, col))){
-                        if(hasEmptyNeighbour(row - 1, col)){
-                            pointList.add(new Point(row - 1, col));
-                        }
-                    }
+                    getNeighborsUtil(row - 1, col, pointList);
                 }
 
-                if(gameBoard[row][col - 1] == EMPTY && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col - 1))){
-                    // Look left
-                    pointList.add(new Point(row, col - 1));
-                }
-                else if(Character.isDigit(gameBoard[row][col - 1]) && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col - 1))){
-                    if(hasEmptyNeighbour(row, col - 1)){
-                        pointList.add(new Point(row, col - 1));
-                    }
-                }
+                getNeighborsUtil(row, col - 1, pointList);
             }
 
             if(row > 0 && row +1 < size && col > 0 && col +1 < size){ // Then we can look every way
-                if(gameBoard[row + 1][col] == EMPTY && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row + 1, col))){
-                    // Look down
-                    pointList.add(new Point(row + 1, col));
-                }
-                else if(Character.isDigit(gameBoard[row + 1][col]) && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row + 1, col))){
-                    if(hasEmptyNeighbour(row + 1, col)){
-                        pointList.add(new Point(row + 1, col));
-                    }
-                }
+                getNeighborsUtil(row + 1, col, pointList);
 
-                if(gameBoard[row - 1][col] == EMPTY && flags[row - 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    // Look up
-                    pointList.add(new Point(row - 1, col));
-                }
-                else if(Character.isDigit(gameBoard[row - 1][col]) && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row - 1, col))){
-                    if(hasEmptyNeighbour(row - 1, col)){
-                        pointList.add(new Point(row - 1, col));
-                    }
-                }
+                getNeighborsUtil(row - 1, col, pointList);
 
-                if(gameBoard[row][col + 1] == EMPTY && flags[row][col + 1] == EMPTY
-                        && !pointList.contains(new Point(row, col + 1))){
-                    // Look right
-                    pointList.add(new Point(row, col + 1));
-                }
-                else if(Character.isDigit(gameBoard[row][col + 1]) && flags[row + 1][col] == EMPTY
-                        && !pointList.contains(new Point(row, col + 1))){
-                    if(hasEmptyNeighbour(row, col + 1)){
-                        pointList.add(new Point(row, col + 1));
-                    }
-                }
+                getNeighborsUtil(row, col + 1, pointList);
 
-                if(gameBoard[row][col - 1] == EMPTY  && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col + 1))){
-                    // Look left
-                    pointList.add(new Point(row, col - 1));
-                }
-                else if(Character.isDigit(gameBoard[row][col - 1]) && flags[row][col - 1] == EMPTY
-                        && !pointList.contains(new Point(row, col - 1))){
-                    if(hasEmptyNeighbour(row, col - 1)){
-                        pointList.add(new Point(row, col - 1));
-                    }
-                }
+                getNeighborsUtil(row, col - 1, pointList);
+
             }
         }
 
         return pointList;
+    }
+
+    /**
+     * Gets a neighboring blank space for a given row/col
+     * @param row Row to parse through
+     * @param col Column to parse through
+     * @param pointList List of points to add to
+     */
+    private void getNeighborsUtil(int row, int col, ArrayList<Point> pointList){
+        if(gameBoard[row][col] == EMPTY && flags[row][col] == EMPTY
+                && !pointList.contains(new Point(row, col))){
+            pointList.add(new Point(row, col));
+        }
+        else if(Character.isDigit(gameBoard[row][col]) && flags[row][col] == EMPTY
+                && !pointList.contains(new Point(row, col))){
+            if(hasEmptyNeighbour(row, col)){
+                pointList.add(new Point(row, col));
+            }
+        }
     }
 
     /**
@@ -584,8 +436,6 @@ public class MinesweepModel extends Observable {
                 subList.clear();
             }
         }
-
-
 
         return masterList;
     }
@@ -762,25 +612,16 @@ public class MinesweepModel extends Observable {
     }
 
     /**
-     * Gets a single space from the gameBoard
-     * @param r The row to access
-     * @param c The column to access
-     * @return The character @ that point
+     * Get function for the boolean isSweeping
+     * @return isSweeping
      */
-    public Character getSpace(int r, int c){
-        return gameBoard[r][c];
-    }
-
-    /**
-     * Changes isSweeping to the opposite of what it currently is
-     */
-    public void toggleSweeping(){isSweeping = !isSweeping;}
+    public boolean getSweeping(){return isSweeping;}
 
     /**
      * Get function for the boolean isSweeping
      * @return isSweeping
      */
-    public boolean getSweeping(){return isSweeping;}
+    public void setSweeping(){isSweeping = !isSweeping;}
 
     /**
      * Checks if the game has been won
@@ -809,11 +650,7 @@ public class MinesweepModel extends Observable {
      * @return true if there is a flag and false otherwise
      */
     public boolean hasFlag(int row, int col){
-        if(flags[row][col] == FLAG){
-            return true;
-        }
-
-        return false;
+        return flags[row][col] == FLAG;
     }
 
     /**
@@ -824,4 +661,11 @@ public class MinesweepModel extends Observable {
         return maxMines - flagNum;
     }
 
+    /**
+     * Returns the gameBoard
+     * @return gameBoard
+     */
+    public Character[][] getGameBoard() {
+        return gameBoard;
+    }
 }
